@@ -1,5 +1,8 @@
 package io.axoniq.training.labs.giftcard.saga;
 
+import io.axoniq.training.labs.giftcard.coreapi.CardIssuedEvent;
+import io.axoniq.training.labs.giftcard.coreapi.RedeemCardCommand;
+import io.axoniq.training.labs.order.coreapi.OrderPlacedEvent;
 import org.axonframework.test.saga.SagaTestFixture;
 import org.junit.*;
 
@@ -16,6 +19,9 @@ public class GiftCardPaymentSagaTest {
 
     @Test
     public void shouldRedeemGiftCardWhenOrderIsPlaced() {
-        fail("To be implemented");
+        fixture.givenAPublished(new CardIssuedEvent("id", 100))
+                .whenPublishingA(new OrderPlacedEvent("oid", "id", 12))
+                .expectDispatchedCommands(new RedeemCardCommand("id", "tid", 12));
+
     }
 }
