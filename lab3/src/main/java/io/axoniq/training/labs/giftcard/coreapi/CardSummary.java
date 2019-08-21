@@ -3,48 +3,74 @@ package io.axoniq.training.labs.giftcard.coreapi;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 public class CardSummary {
 
     @Id
     private String cardId;
-
-    private int initialValue;
+    private Integer initialValue;
     private Instant issuedAt;
-    private int remainingValue;
+    private Integer remainingValue;
+
+    public CardSummary(String cardId, int initialValue, Instant issuedAt) {
+        this.cardId = cardId;
+        this.initialValue = initialValue;
+        this.issuedAt = issuedAt;
+        this.remainingValue = initialValue;
+    }
 
     public CardSummary() {
     }
 
-    public CardSummary(String cardId, int initialValue) {
-        this.cardId = cardId;
-        this.initialValue = initialValue;
-        this.remainingValue = initialValue;
-        this.issuedAt = Instant.now();
-    }
-
     public String getCardId() {
-        return cardId;
+        return this.cardId;
     }
 
-    public int getInitialValue() {
-        return initialValue;
+    public Integer getInitialValue() {
+        return this.initialValue;
     }
 
     public Instant getIssuedAt() {
-        return issuedAt;
+        return this.issuedAt;
     }
 
-    public int getRemainingValue() {
-        return remainingValue;
+    public Integer getRemainingValue() {
+        return this.remainingValue;
     }
 
-    public void reimburse(int amount) {
-        this.remainingValue += amount;
+    public void setRemainingValue(int remainingValue) {
+        this.remainingValue = remainingValue;
     }
 
-    public void redeem(int amount) {
-        this.remainingValue -= amount;
+    @Override
+    public String toString() {
+        return "CardSummary{" +
+                "cardId='" + cardId + '\'' +
+                ", initialValue=" + initialValue +
+                ", issuedAt=" + issuedAt +
+                ", remainingValue=" + remainingValue +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CardSummary that = (CardSummary) o;
+        return Objects.equals(cardId, that.cardId) &&
+                Objects.equals(initialValue, that.initialValue) &&
+                Objects.equals(issuedAt, that.issuedAt) &&
+                Objects.equals(remainingValue, that.remainingValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(cardId, initialValue, issuedAt, remainingValue);
     }
 }

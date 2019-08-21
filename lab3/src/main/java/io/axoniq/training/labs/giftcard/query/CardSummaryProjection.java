@@ -1,60 +1,51 @@
 package io.axoniq.training.labs.giftcard.query;
 
-import io.axoniq.training.labs.giftcard.command.GiftCardTransaction;
 import io.axoniq.training.labs.giftcard.coreapi.*;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.queryhandling.QueryHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
-import java.util.Collections;
+import java.time.Instant;
 import java.util.List;
 
 @Component
 public class CardSummaryProjection {
 
-    private static final Logger logger = LoggerFactory.getLogger(CardSummaryProjection.class);
     private final EntityManager entityManager;
 
     public CardSummaryProjection(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
-    @QueryHandler
-    public List<CardSummary> handle(FindCardSummariesQuery query) {
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        return findAll().subList(query.getOffset(), query.getOffset() + query.getLimit());
-    }
-
-    private List<CardSummary> findAll() {
-        return entityManager.createQuery("select s from CardSummary s", CardSummary.class).getResultList();
-    }
-
-    @QueryHandler
-    public Long handle(CountCardSummariesQuery query) {
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        return Long.valueOf(findAll().size());
-    }
-
     @EventHandler
-    public void cardIssued(CardIssuedEvent evt) {
-        CardSummary cardSummary = new CardSummary(evt.getCardId(), evt.getAmount());
-        entityManager.persist(cardSummary);
-    }
-
-    @EventHandler
-    protected void on(CardReimbursedEvent event) {
-        CardSummary cardSummary = entityManager.find(CardSummary.class, event.getCardId());
-        cardSummary.reimburse(event.getAmount());
+    public void on(CardIssuedEvent evt, @Timestamp Instant instant) {
+        entityManager.persist(new CardSummary(evt.getCardId(), evt.getAmount(), instant));
     }
 
     @EventHandler
     public void on(CardRedeemedEvent evt) {
-        CardSummary cardSummary = entityManager.find(CardSummary.class, evt.getCardId());
-        cardSummary.redeem(evt.getAmount());
+        CardSummary summary = entityManager.find(CardSummary.class, evt.getCardId());
+        summary.setRemainingValue(summary.getRemainingValue() - evt.getAmount());
     }
 
+    @EventHandler
+    public void on(CardReimbursedEvent evt) {
+        CardSummary summary = entityManager.find(CardSummary.class, evt.getCardId());
+        summary.setRemainingValue(summary.getRemainingValue() + evt.getAmount());
+    }
+
+    @QueryHandler
+    public List<CardSummary> handle(FindCardSummariesQuery query) {
+        return entityManager.createQuery("SELECT c FROM CardSummary c ORDER BY c.cardId", CardSummary.class)
+                .setFirstResult(query.getOffset())
+                .setMaxResults(query.getLimit()).getResultList();
+    }
+
+    @QueryHandler
+    public Long handle(CountCardSummariesQuery query) {
+        return entityManager.createQuery("SELECT COUNT(c) FROM CardSummary c", Long.class)
+                .getSingleResult();
+    }
 }
