@@ -16,4 +16,5 @@ public class GiftCardApplication {
     public OrderCommandHandler orderCommandHandler() {
         return new OrderCommandHandler();
     }
+
 }
